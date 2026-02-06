@@ -1,0 +1,15 @@
+# Dependencies (The most important part!)
+node_modules/
+**/node_modules/
+
+# Environment Variables (Keep your secrets safe)
+.env
+**/.env
+
+# Production Builds
+/frontend/dist
+/frontend/build
+
+# Logs and System Files
+*.log
+.DS_Store
