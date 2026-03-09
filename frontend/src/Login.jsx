@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import API_URL from './config';
 import { useNavigate } from 'react-router-dom';
 import { FaLock, FaUser, FaBuilding } from 'react-icons/fa';
 import { toast } from 'react-toastify';
@@ -16,7 +17,7 @@ function Login({ setUser }) {
     setIsLoading(true);
     
     try {
-      const res = await axios.post('http://localhost:5000/api/login', { loginId, password });
+      const res = await axios.post(`${API_URL}/api/login`, { loginId, password });
       
       setUser(res.data.user);
       localStorage.setItem('user', JSON.stringify(res.data.user));

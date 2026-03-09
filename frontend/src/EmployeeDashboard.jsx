@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_URL from './config';
 import { FaUserCircle, FaSignOutAlt, FaWallet } from 'react-icons/fa';
 import { toast } from 'react-toastify'; // <--- Import Toast
 import './App.css'; 
 
 function EmployeeDashboard() {
   const [user, setUser] = useState(null);
+  const [profilePic, setProfilePic] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
   const [attendanceHistory, setAttendanceHistory] = useState([]);
   const [myLeaves, setMyLeaves] = useState([]);
@@ -22,25 +24,38 @@ function EmployeeDashboard() {
     if (storedUser) {
       const userData = JSON.parse(storedUser);
       setUser(userData);
-      setEditForm(userData);
+      // Ensure null values become empty strings for form inputs
+      setEditForm({
+        ...userData,
+        phone: userData.phone || '',
+        address: userData.address || ''
+      });
       fetchData(userData.employeeId);
     } else navigate('/');
   }, []);
 
   const fetchData = async (empId) => {
     try {
-      const attRes = await axios.get(`http://localhost:5000/api/attendance/${empId}`);
+      const attRes = await axios.get(`${API_URL}/api/attendance/${empId}`);
       setAttendanceHistory(attRes.data);
-      const leaveRes = await axios.get(`http://localhost:5000/api/leaves/my-leaves/${empId}`);
+    } catch (err) { }
+    try {
+      const leaveRes = await axios.get(`${API_URL}/api/leaves/my-leaves/${empId}`);
       setMyLeaves(leaveRes.data);
-      const payRes = await axios.get(`http://localhost:5000/api/payroll/${empId}`);
+    } catch (err) { }
+    try {
+      const payRes = await axios.get(`${API_URL}/api/payroll/${empId}`);
       setPayroll(payRes.data);
+    } catch (err) { }
+    try {
+      const picRes = await axios.get(`${API_URL}/api/user/profile-picture/${empId}`);
+      setProfilePic(picRes.data.profilePicture);
     } catch (err) { }
   };
 
   const handleCheckIn = async () => {
     try {
-      await axios.post('http://localhost:5000/api/attendance/checkin', { employeeId: user.employeeId, name: user.name });
+      await axios.post(`${API_URL}/api/attendance/checkin`, { employeeId: user.employeeId, name: user.name });
       toast.success("Checked IN Successfully!"); // <--- TOAST
       fetchData(user.employeeId);
     } catch (err) { toast.error(err.response?.data?.message); } // <--- TOAST
@@ -48,7 +63,7 @@ function EmployeeDashboard() {
 
   const handleCheckOut = async () => {
     try {
-      await axios.post('http://localhost:5000/api/attendance/checkout', { employeeId: user.employeeId });
+      await axios.post(`${API_URL}/api/attendance/checkout`, { employeeId: user.employeeId });
       toast.success("Checked OUT Successfully!"); // <--- TOAST
       fetchData(user.employeeId);
     } catch (err) { toast.error(err.response?.data?.message); } // <--- TOAST
@@ -57,7 +72,7 @@ function EmployeeDashboard() {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      await axios.put('http://localhost:5000/api/user/update', { employeeId: user.employeeId, phone: editForm.phone, address: editForm.address });
+      await axios.put(`${API_URL}/api/user/update`, { employeeId: user.employeeId, phone: editForm.phone, address: editForm.address });
       toast.success("Profile Updated!"); // <--- TOAST
       const updatedUser = { ...user, phone: editForm.phone, address: editForm.address };
       localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -68,7 +83,7 @@ function EmployeeDashboard() {
   const handleApplyLeave = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/leaves/apply', { employeeId: user.employeeId, name: user.name, leaveType: leaveForm.type, startDate: leaveForm.startDate, endDate: leaveForm.endDate, remarks: leaveForm.remarks });
+      await axios.post(`${API_URL}/api/leaves/apply`, { employeeId: user.employeeId, name: user.name, leaveType: leaveForm.type, startDate: leaveForm.startDate, endDate: leaveForm.endDate, remarks: leaveForm.remarks });
       toast.success("Leave Request Sent!"); // <--- TOAST
       fetchData(user.employeeId);
     } catch (err) { toast.error("Failed to apply"); }
@@ -106,7 +121,7 @@ function EmployeeDashboard() {
 
       {activeTab === 'profile' && (
         <div className="employee-card" style={{maxWidth: '600px', margin: '0 auto'}}>
-          {user.profilePicture ? <img src={user.profilePicture} className="card-avatar" style={{width: '120px', height: '120px'}} /> : <FaUserCircle size={100} color="#e5e7eb" style={{marginBottom: '1rem'}} />}
+          {profilePic ? <img src={profilePic} className="card-avatar" style={{width: '120px', height: '120px'}} /> : <FaUserCircle size={100} color="#e5e7eb" style={{marginBottom: '1rem'}} />}
           <div style={{display: 'flex', gap: '1rem', justifyContent: 'center', margin: '2rem 0'}}>
              <button className="btn-success" onClick={handleCheckIn} style={{width: '150px'}}>Check IN</button>
              <button className="btn-danger" onClick={handleCheckOut} style={{width: '150px'}}>Check OUT</button>
@@ -118,8 +133,8 @@ function EmployeeDashboard() {
             </div>
           ) : (
             <form onSubmit={handleUpdateProfile} style={{textAlign: 'left'}}>
-               <div className="form-group"><label>Phone</label><input value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} /></div>
-               <div className="form-group"><label>Address</label><input value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} /></div>
+               <div className="form-group"><label>Phone</label><input value={editForm.phone || ''} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} /></div>
+               <div className="form-group"><label>Address</label><input value={editForm.address || ''} onChange={e => setEditForm({ ...editForm, address: e.target.value })} /></div>
                <div style={{display:'flex', gap:'1rem', marginTop:'1rem'}}>
                   <button type="submit" className="btn-primary" style={{flex:1}}>Save</button>
                   <button type="button" className="btn-secondary" onClick={() => setIsEditing(false)}>Cancel</button>

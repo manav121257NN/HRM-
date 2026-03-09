@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_URL from './config';
 import { useNavigate } from 'react-router-dom';
 import { FaUsers, FaUserCheck, FaClock, FaMoneyBillWave, FaSignOutAlt, FaPlus, FaTrash, FaTimes, FaPhone, FaMapMarkerAlt, FaEnvelope, FaBriefcase, FaUserCircle } from 'react-icons/fa';
 import { toast } from 'react-toastify';
@@ -29,6 +30,14 @@ function AdminDashboard() {
   
   const navigate = useNavigate();
 
+  // --- AUTH CHECK ---
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) { navigate('/'); return; }
+    const parsed = JSON.parse(storedUser);
+    if (parsed.role !== 'Admin') { navigate('/'); return; }
+  }, []);
+
   // --- DATA FETCHING ---
   useEffect(() => {
     if (activeTab === 'home') fetchStats();
@@ -38,18 +47,18 @@ function AdminDashboard() {
     else if (activeTab === 'payroll') fetchPayrolls();
   }, [activeTab]);
 
-  const fetchStats = async () => { try { const res = await axios.get('http://localhost:5000/api/dashboard/stats'); setStats(res.data); } catch (err) {} };
-  const fetchEmployees = async () => { try { const res = await axios.get('http://localhost:5000/api/employees'); setEmployees(res.data); } catch (err) {} };
-  const fetchAttendance = async () => { try { const res = await axios.get('http://localhost:5000/api/attendance'); setAttendanceRecords(res.data); } catch (err) {} };
-  const fetchLeaves = async () => { try { const res = await axios.get('http://localhost:5000/api/leaves/all'); setLeaveRequests(res.data); } catch (err) {} };
-  const fetchPayrolls = async () => { try { const res = await axios.get('http://localhost:5000/api/payroll/all'); setPayrolls(res.data); } catch (err) {} };
+  const fetchStats = async () => { try { const res = await axios.get(`${API_URL}/api/dashboard/stats`); setStats(res.data); } catch (err) {} };
+  const fetchEmployees = async () => { try { const res = await axios.get(`${API_URL}/api/employees`); setEmployees(res.data); } catch (err) {} };
+  const fetchAttendance = async () => { try { const res = await axios.get(`${API_URL}/api/attendance`); setAttendanceRecords(res.data); } catch (err) {} };
+  const fetchLeaves = async () => { try { const res = await axios.get(`${API_URL}/api/leaves/all`); setLeaveRequests(res.data); } catch (err) {} };
+  const fetchPayrolls = async () => { try { const res = await axios.get(`${API_URL}/api/payroll/all`); setPayrolls(res.data); } catch (err) {} };
 
   // --- HANDLERS ---
   const handleDelete = async (e, id) => {
     e.stopPropagation(); 
     if (!confirm("Are you sure you want to delete this employee?")) return;
     try {
-        await axios.delete(`http://localhost:5000/api/employees/${id}`);
+        await axios.delete(`${API_URL}/api/employees/${id}`);
         toast.success("Employee Deleted Successfully"); 
         fetchEmployees();
     } catch (err) { toast.error("Error deleting employee"); } 
@@ -60,7 +69,7 @@ function AdminDashboard() {
       setSelectedEmpPayroll(null);
       setShowViewModal(true);
       try {
-          const res = await axios.get(`http://localhost:5000/api/payroll/${emp.employeeId}`);
+          const res = await axios.get(`${API_URL}/api/payroll/${emp.employeeId}`);
           setSelectedEmpPayroll(res.data);
       } catch (err) { }
   };
@@ -68,7 +77,7 @@ function AdminDashboard() {
   const handlePayrollUpdate = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/payroll/update', payrollForm);
+      await axios.post(`${API_URL}/api/payroll/update`, payrollForm);
       toast.success("Salary Structure Updated!"); 
       setShowPayrollModal(false);
       fetchPayrolls();
@@ -83,7 +92,7 @@ function AdminDashboard() {
 };
   const handleLeaveAction = async (id, status) => { 
       try { 
-          await axios.put('http://localhost:5000/api/leaves/status', { id, status }); 
+          await axios.put(`${API_URL}/api/leaves/status`, { id, status }); 
           toast.success(`Leave ${status} Successfully!`); 
           fetchLeaves(); 
       } catch (err) { toast.error("Action failed"); } 
@@ -108,8 +117,7 @@ const handleSubmit = async (e) => {
 
       // --- 2. SEND TO SERVER ---
       try { 
-          const res = await axios.post('http://localhost:5000/api/create-employee', formData); 
-          
+          const res = await axios.post(`${API_URL}/api/create-employee`, formData);           
           // Show Success Info
           setCreatedEmployee({ id: res.data.employeeId, password: res.data.autoPassword }); 
           
