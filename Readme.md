@@ -1,7 +1,7 @@
 IMPORTANT
 
-#frontend mene vercel me deploy kiya hai
-#backend  mene render.com me deploy kiya hai
+# frontend mene vercel me deploy kiya hai
+# backend  mene render.com me deploy kiya hai
 
 
 # BACKEND
