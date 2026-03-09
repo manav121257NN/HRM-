@@ -1,3 +1,9 @@
+IMPORTANT
+
+#frontend mene vercel me deploy kiya hai
+#backend  mene render.com me deploy kiya hai
+
+
 # BACKEND
 
 to run backendt run this commad "nodemon server.js" in backedn forlder
